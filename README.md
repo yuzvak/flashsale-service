@@ -2,7 +2,7 @@
 
 High-performance flash sale microservice built with Go standard library, PostgreSQL, and Redis. Designed to handle 10,000 items per hourly sale with high concurrency and correctness guarantees.
 
-FOR NOTØ WITH LOVE <3
+FOR NOTØ WITH LOVE ♡
 
 ## 🎯 Enhanced Implementation
 
