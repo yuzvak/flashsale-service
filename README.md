@@ -2,6 +2,8 @@
 
 High-performance flash sale microservice built with Go standard library, PostgreSQL, and Redis. Designed to handle 10,000 items per hourly sale with high concurrency and correctness guarantees.
 
+FOR NOTØ WITH LOVE <3
+
 ## 🎯 Enhanced Implementation
 
 While the original task specified a 1-checkout → 1-purchase flow, I found this too simple for a real-world scenario. This implementation allows users to **checkout up to 10 items simultaneously** before making a single atomic purchase, providing a more realistic e-commerce experience.
@@ -62,27 +64,4 @@ Detailed documentation available in the [project wiki](https://github.com/yuzvak
 - [Scaling Strategy](https://github.com/yuzvak/flashsale-service/wiki/Scaling-Strategy)
 - [Design Decisions & Architecture Rationale](https://github.com/yuzvak/flashsale-service/wiki/Design-Decisions-&-Architecture-Rationale)
 
-## 🔧 Development
-
-```bash
-# Build the service
-make build
-
-# Run tests
-make test
-
-# Run different load test scenarios
-make load-test-light    # 200 users, 2 minutes
-make load-test-heavy    # 800 users, 10 minutes
-make load-test-stress   # 1500 users, 15 minutes
-```
-
-## 📈 Performance
-
-Designed for high throughput with:
-- **1000+ RPS** sustained throughput
-- **Sub-100ms** P95 response times
-- **Zero data races** with atomic operations
-- **Horizontal scaling** capabilities
-
-Built for production environments requiring strict correctness guarantees and high availability.
+Built by [yuzvak](https://t.me.yuzvak) for production environments requiring strict correctness guarantees and high availability.
