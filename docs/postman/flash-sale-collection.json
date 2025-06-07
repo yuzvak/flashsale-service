@@ -308,7 +308,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&item_id={{test_item_id_1}}",
+							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&id={{test_item_id_1}}",
 							"host": ["{{base_url}}"],
 							"path": ["checkout"],
 							"query": [
@@ -317,7 +317,7 @@
 									"value": "{{test_user_id}}"
 								},
 								{
-									"key": "item_id",
+									"key": "id",
 									"value": "{{test_item_id_1}}"
 								}
 							]
@@ -354,7 +354,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&item_id={{test_item_id_2}}",
+							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&id={{test_item_id_2}}",
 							"host": ["{{base_url}}"],
 							"path": ["checkout"],
 							"query": [
@@ -363,7 +363,7 @@
 									"value": "{{test_user_id}}"
 								},
 								{
-									"key": "item_id",
+									"key": "id",
 									"value": "{{test_item_id_2}}"
 								}
 							]
@@ -394,7 +394,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&item_id={{test_item_id_1}}",
+							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&id={{test_item_id_1}}",
 							"host": ["{{base_url}}"],
 							"path": ["checkout"],
 							"query": [
@@ -403,7 +403,7 @@
 									"value": "{{test_user_id}}"
 								},
 								{
-									"key": "item_id",
+									"key": "id",
 									"value": "{{test_item_id_1}}"
 								}
 							]
@@ -593,7 +593,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/checkout?user_id={{limit_test_user}}&item_id={{test_item_id_3}}",
+							"raw": "{{base_url}}/checkout?user_id={{limit_test_user}}&id={{test_item_id_3}}",
 							"host": ["{{base_url}}"],
 							"path": ["checkout"],
 							"query": [
@@ -602,7 +602,7 @@
 									"value": "{{limit_test_user}}"
 								},
 								{
-									"key": "item_id",
+									"key": "id",
 									"value": "{{test_item_id_3}}"
 								}
 							]
@@ -636,12 +636,12 @@
 								"method": "POST",
 								"header": [],
 								"url": {
-									"raw": "{{base_url}}/checkout?item_id={{test_item_id_1}}",
+									"raw": "{{base_url}}/checkout?id={{test_item_id_1}}",
 									"host": ["{{base_url}}"],
 									"path": ["checkout"],
 									"query": [
 										{
-											"key": "item_id",
+											"key": "id",
 											"value": "{{test_item_id_1}}"
 										}
 									]
@@ -766,7 +766,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/checkout?user_id={{load_test_user}}&item_id={{random_item}}",
+							"raw": "{{base_url}}/checkout?user_id={{load_test_user}}&id={{random_item}}",
 							"host": ["{{base_url}}"],
 							"path": ["checkout"],
 							"query": [
@@ -775,7 +775,7 @@
 									"value": "{{load_test_user}}"
 								},
 								{
-									"key": "item_id",
+									"key": "id",
 									"value": "{{random_item}}"
 								}
 							]
@@ -820,7 +820,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/checkout?user_id={{race_test_user}}&item_id={{test_item_id_1}}",
+							"raw": "{{base_url}}/checkout?user_id={{race_test_user}}&id={{test_item_id_1}}",
 							"host": ["{{base_url}}"],
 							"path": ["checkout"],
 							"query": [
@@ -829,7 +829,7 @@
 									"value": "{{race_test_user}}"
 								},
 								{
-									"key": "item_id",
+									"key": "id",
 									"value": "{{test_item_id_1}}"
 								}
 							]
@@ -908,7 +908,7 @@
 					"method": "POST",
 					"header": [],
 					"url": {
-						"raw": "{{base_url}}/checkout?user_id={{perf_test_user}}&item_id={{test_item_id_1}}",
+						"raw": "{{base_url}}/checkout?user_id={{perf_test_user}}&id={{test_item_id_1}}",
 						"host": ["{{base_url}}"],
 						"path": ["checkout"],
 						"query": [
@@ -917,7 +917,7 @@
 								"value": "{{perf_test_user}}"
 							},
 							{
-								"key": "item_id",
+								"key": "id",
 								"value": "{{test_item_id_1}}"
 							}
 						]

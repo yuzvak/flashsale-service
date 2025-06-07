@@ -40,7 +40,7 @@ func (h *CheckoutHandler) HandleCheckout() http.HandlerFunc {
 		}
 
 		userID := r.URL.Query().Get("user_id")
-		itemID := r.URL.Query().Get("item_id")
+		itemID := r.URL.Query().Get("id")
 
 		h.log.Info("Checkout request received",
 			"user_id", userID,
@@ -54,7 +54,7 @@ func (h *CheckoutHandler) HandleCheckout() http.HandlerFunc {
 			errors["user_id"] = "user_id is required"
 		}
 		if itemID == "" {
-			errors["item_id"] = "item_id is required"
+			errors["id"] = "id is required"
 		}
 		if len(errors) > 0 {
 			h.log.Warn("Checkout validation failed",
