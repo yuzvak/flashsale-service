@@ -64,4 +64,4 @@ Detailed documentation available in the [project wiki](https://github.com/yuzvak
 - [Scaling Strategy](https://github.com/yuzvak/flashsale-service/wiki/Scaling-Strategy)
 - [Design Decisions & Architecture Rationale](https://github.com/yuzvak/flashsale-service/wiki/Design-Decisions-&-Architecture-Rationale)
 
-Built by [yuzvak](https://t.me.yuzvak) for production environments requiring strict correctness guarantees and high availability.
+Built by [yuzvak](https://t.me/yuzvak) for production environments requiring strict correctness guarantees and high availability.
