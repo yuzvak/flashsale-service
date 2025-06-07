@@ -17,10 +17,10 @@ This Postman collection provides:
 
 ```bash
 # Import the collection
-curl -o flash-sale-collection.json https://raw.githubusercontent.com/your-repo/postman/flash-sale-collection.json
+curl -o flash-sale-collection.json https://raw.githubusercontent.com/yuzvak/flashsale-service/refs/heads/main/docs/postman/flash-sale-collection.json
 
 # Import the environment
-curl -o flash-sale-environment.json https://raw.githubusercontent.com/your-repo/postman/flash-sale-environment.json
+curl -o flash-sale-environment.json https://raw.githubusercontent.com/yuzvak/flashsale-service/refs/heads/main/docs/postman/flash-sale-environment.json
 ```
 
 ### 2. Configure Environment
