@@ -1,0 +1,1172 @@
+{
+	"info": {
+		"_postman_id": "flash-sale-service-collection",
+		"name": "Flash Sale Service - Smart Testing Collection",
+		"description": "Comprehensive testing collection for Flash Sale microservice with automated scenarios, load testing, and analytics",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "flash-sale-team"
+	},
+	"item": [
+		{
+			"name": "🏥 Health & Infrastructure",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Health check returns 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Service is healthy', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.services_status.app).to.eql('UP');",
+									"    pm.expect(response.services_status.database).to.eql('UP');",
+									"    pm.expect(response.services_status.redis).to.eql('UP');",
+									"});",
+									"",
+									"pm.test('Memory usage is reasonable', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.memory.alloc).to.be.below(1000000000); // < 1GB",
+									"});",
+									"",
+									"// Store service status for other tests",
+									"pm.globals.set('service_healthy', 'true');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						}
+					}
+				},
+				{
+					"name": "Metrics Endpoint",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Metrics endpoint accessible', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Contains Prometheus metrics', function () {",
+									"    const body = pm.response.text();",
+									"    pm.expect(body).to.include('http_requests_total');",
+									"    pm.expect(body).to.include('checkout_attempts_total');",
+									"    pm.expect(body).to.include('purchase_success_total');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics",
+							"host": ["{{base_url}}"],
+							"path": ["metrics"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🛡️ Admin Operations",
+			"item": [
+				{
+					"name": "Create New Sale (Admin)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Calculate sale times",
+									"const now = new Date();",
+									"const startTime = new Date(now.getTime() + 60000); // Start in 1 minute",
+									"const endTime = new Date(startTime.getTime() + 3600000); // End 1 hour later",
+									"",
+									"pm.environment.set('sale_start_time', startTime.toISOString());",
+									"pm.environment.set('sale_end_time', endTime.toISOString());"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Sale created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Sale response contains required fields', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.data).to.have.property('id');",
+									"    pm.expect(response.data).to.have.property('started_at');",
+									"    pm.expect(response.data).to.have.property('ended_at');",
+									"    pm.expect(response.data.total_items).to.eql(10000);",
+									"    ",
+									"    // Store sale ID for other tests",
+									"    pm.environment.set('current_sale_id', response.data.id);",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"started_at\": \"{{sale_start_time}}\",\n    \"ended_at\": \"{{sale_end_time}}\",\n    \"total_items\": 10000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/sales",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "sales"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📊 Sale Information",
+			"item": [
+				{
+					"name": "Get Active Sale",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Active sale retrieved successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Sale is currently active', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('id');",
+									"    pm.expect(response.active).to.be.true;",
+									"    ",
+									"    // Store active sale info",
+									"    pm.environment.set('active_sale_id', response.id);",
+									"    pm.environment.set('sale_ends_at', response.ended_at);",
+									"});",
+									"",
+									"pm.test('Sale has correct item counts', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.total_items).to.eql(10000);",
+									"    pm.expect(response.items_sold).to.be.at.most(10000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/sales/active",
+							"host": ["{{base_url}}"],
+							"path": ["sales", "active"]
+						}
+					}
+				},
+				{
+					"name": "Get Sale Items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Sale items retrieved successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Items list is valid', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"    pm.expect(response.length).to.be.above(0);",
+									"    ",
+									"    // Store some item IDs for testing",
+									"    if (response.length > 0) {",
+									"        const availableItems = response.filter(item => !item.sold);",
+									"        if (availableItems.length > 0) {",
+									"            pm.environment.set('test_item_id_1', availableItems[0].id);",
+									"        }",
+									"        if (availableItems.length > 1) {",
+									"            pm.environment.set('test_item_id_2', availableItems[1].id);",
+									"        }",
+									"        if (availableItems.length > 2) {",
+									"            pm.environment.set('test_item_id_3', availableItems[2].id);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Items have required properties', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const item = response[0];",
+									"        pm.expect(item).to.have.property('id');",
+									"        pm.expect(item).to.have.property('name');",
+									"        pm.expect(item).to.have.property('image_url');",
+									"        pm.expect(item).to.have.property('sold');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/sales/{{active_sale_id}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["sales", "{{active_sale_id}}", "items"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🛒 Checkout Flow",
+			"item": [
+				{
+					"name": "Single Item Checkout",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate unique user ID for this test",
+									"const userId = 'user_' + Math.random().toString(36).substr(2, 9);",
+									"pm.environment.set('test_user_id', userId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Checkout successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Checkout response is valid', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('code');",
+									"    pm.expect(response).to.have.property('items_count');",
+									"    pm.expect(response).to.have.property('sale_ends_at');",
+									"    pm.expect(response.items_count).to.eql(1);",
+									"    ",
+									"    // Store checkout code for purchase test",
+									"    pm.environment.set('checkout_code', response.code);",
+									"});",
+									"",
+									"pm.test('Checkout code format is correct', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.code).to.match(/^CHK-/);",
+									"});",
+									"",
+									"pm.test('Response time is fast', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&item_id={{test_item_id_1}}",
+							"host": ["{{base_url}}"],
+							"path": ["checkout"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "{{test_user_id}}"
+								},
+								{
+									"key": "item_id",
+									"value": "{{test_item_id_1}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Add Second Item to Checkout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Second item added successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Items count increased', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.items_count).to.eql(2);",
+									"});",
+									"",
+									"pm.test('Same checkout code returned', function () {",
+									"    const response = pm.response.json();",
+									"    const previousCode = pm.environment.get('checkout_code');",
+									"    pm.expect(response.code).to.eql(previousCode);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&item_id={{test_item_id_2}}",
+							"host": ["{{base_url}}"],
+							"path": ["checkout"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "{{test_user_id}}"
+								},
+								{
+									"key": "item_id",
+									"value": "{{test_item_id_2}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Duplicate Item Checkout (Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Duplicate checkout rejected', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error message is informative', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.message).to.include('already');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/checkout?user_id={{test_user_id}}&item_id={{test_item_id_1}}",
+							"host": ["{{base_url}}"],
+							"path": ["checkout"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "{{test_user_id}}"
+								},
+								{
+									"key": "item_id",
+									"value": "{{test_item_id_1}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "💳 Purchase Flow",
+			"item": [
+				{
+					"name": "Execute Purchase",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Purchase executed successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Purchase response is valid', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('success');",
+									"    pm.expect(response).to.have.property('purchased_items');",
+									"    pm.expect(response).to.have.property('total_purchased');",
+									"    pm.expect(response).to.have.property('failed_count');",
+									"});",
+									"",
+									"pm.test('Items were purchased', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.total_purchased).to.be.above(0);",
+									"});",
+									"",
+									"pm.test('Purchased items details are correct', function () {",
+									"    const response = pm.response.json();",
+									"    response.purchased_items.forEach(item => {",
+									"        pm.expect(item).to.have.property('id');",
+									"        pm.expect(item).to.have.property('name');",
+									"        pm.expect(item).to.have.property('sold');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/purchase?code={{checkout_code}}",
+							"host": ["{{base_url}}"],
+							"path": ["purchase"],
+							"query": [
+								{
+									"key": "code",
+									"value": "{{checkout_code}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Duplicate Purchase (Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Duplicate purchase rejected', function () {",
+									"    // Could be 404 (code not found) or 409 (already sold)",
+									"    pm.expect([404, 409]).to.include(pm.response.code);",
+									"});",
+									"",
+									"pm.test('Error response is informative', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/purchase?code={{checkout_code}}",
+							"host": ["{{base_url}}"],
+							"path": ["purchase"],
+							"query": [
+								{
+									"key": "code",
+									"value": "{{checkout_code}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Invalid Checkout Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Invalid code rejected', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error message is clear', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.message).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/purchase?code=CHK-INVALID-CODE",
+							"host": ["{{base_url}}"],
+							"path": ["purchase"],
+							"query": [
+								{
+									"key": "code",
+									"value": "CHK-INVALID-CODE"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🚫 Edge Cases & Limits",
+			"item": [
+				{
+					"name": "User Limit Test (11 Items)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate unique user for limit testing",
+									"const limitUser = 'limit_user_' + Math.random().toString(36).substr(2, 9);",
+									"pm.environment.set('limit_test_user', limitUser);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// This test will try to checkout 11 items",
+									"// The 11th should fail with user limit exceeded",
+									"",
+									"const currentIteration = pm.info.iteration || 1;",
+									"",
+									"if (currentIteration <= 10) {",
+									"    pm.test('Checkout ' + currentIteration + ' successful', function () {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"} else {",
+									"    pm.test('11th item checkout rejected (user limit)', function () {",
+									"        pm.response.to.have.status(400);",
+									"    });",
+									"    ",
+									"    pm.test('Error mentions user limit', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response.message.toLowerCase()).to.include('limit');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/checkout?user_id={{limit_test_user}}&item_id={{test_item_id_3}}",
+							"host": ["{{base_url}}"],
+							"path": ["checkout"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "{{limit_test_user}}"
+								},
+								{
+									"key": "item_id",
+									"value": "{{test_item_id_3}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Missing Parameters",
+					"item": [
+						{
+							"name": "Checkout without user_id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Missing user_id rejected', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Validation error mentions user_id', function () {",
+											"    const response = pm.response.json();",
+											"    pm.expect(response.errors).to.have.property('user_id');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/checkout?item_id={{test_item_id_1}}",
+									"host": ["{{base_url}}"],
+									"path": ["checkout"],
+									"query": [
+										{
+											"key": "item_id",
+											"value": "{{test_item_id_1}}"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Checkout without item_id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Missing item_id rejected', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Validation error mentions item_id', function () {",
+											"    const response = pm.response.json();",
+											"    pm.expect(response.errors).to.have.property('item_id');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/checkout?user_id=test_user",
+									"host": ["{{base_url}}"],
+									"path": ["checkout"],
+									"query": [
+										{
+											"key": "user_id",
+											"value": "test_user"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Purchase without code",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Missing code rejected', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Validation error mentions code', function () {",
+											"    const response = pm.response.json();",
+											"    pm.expect(response.errors).to.have.property('code');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/purchase",
+									"host": ["{{base_url}}"],
+									"path": ["purchase"]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "⚡ Load Testing Scenarios",
+			"item": [
+				{
+					"name": "Concurrent Checkout Load Test",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate unique user for load testing",
+									"const loadUser = 'load_user_' + Math.random().toString(36).substr(2, 9);",
+									"pm.environment.set('load_test_user', loadUser);",
+									"",
+									"// Use different item each time",
+									"const itemIndex = Math.floor(Math.random() * 3) + 1;",
+									"pm.environment.set('random_item', pm.environment.get('test_item_id_' + itemIndex));"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Load test - checkout response', function () {",
+									"    // Accept both success and reasonable failures",
+									"    pm.expect([200, 400, 409]).to.include(pm.response.code);",
+									"});",
+									"",
+									"pm.test('Load test - response time acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+									"});",
+									"",
+									"// Track metrics",
+									"const isSuccess = pm.response.code === 200;",
+									"const responseTime = pm.response.responseTime;",
+									"",
+									"console.log(`Checkout: ${isSuccess ? 'SUCCESS' : 'FAILED'} - ${responseTime}ms`);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/checkout?user_id={{load_test_user}}&item_id={{random_item}}",
+							"host": ["{{base_url}}"],
+							"path": ["checkout"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "{{load_test_user}}"
+								},
+								{
+									"key": "item_id",
+									"value": "{{random_item}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Race Condition Test - Same Item",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Multiple users trying to checkout the same item",
+									"const raceUser = 'race_user_' + Math.random().toString(36).substr(2, 9);",
+									"pm.environment.set('race_test_user', raceUser);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Race condition handled gracefully', function () {",
+									"    // Should either succeed or fail gracefully",
+									"    pm.expect([200, 400, 409]).to.include(pm.response.code);",
+									"});",
+									"",
+									"pm.test('No server errors during race condition', function () {",
+									"    pm.expect(pm.response.code).to.not.be.above(499);",
+									"});",
+									"",
+									"// Log outcome for analysis",
+									"console.log(`Race test - User: ${pm.environment.get('race_test_user')} - Status: ${pm.response.code}`);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/checkout?user_id={{race_test_user}}&item_id={{test_item_id_1}}",
+							"host": ["{{base_url}}"],
+							"path": ["checkout"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "{{race_test_user}}"
+								},
+								{
+									"key": "item_id",
+									"value": "{{test_item_id_1}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📈 Performance Monitoring",
+			"item": [
+				{
+					"name": "Response Time Baseline",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Health check baseline - under 100ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(100);",
+									"});",
+									"",
+									"// Store baseline metrics",
+									"pm.globals.set('baseline_health_time', pm.response.responseTime);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						}
+					}
+				},
+				{
+					"name": "Checkout Performance Test",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const perfUser = 'perf_user_' + Math.random().toString(36).substr(2, 9);",
+								"pm.environment.set('perf_test_user', perfUser);"
+							],
+							"type": "text/javascript"
+						}
+					},
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test('Checkout performance - under 1 second', function () {",
+								"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+								"});",
+								"",
+								"pm.test('Checkout performance - under 500ms preferred', function () {",
+								"    if (pm.response.responseTime > 500) {",
+								"        console.warn(`Checkout took ${pm.response.responseTime}ms - consider optimization`);",
+								"    }",
+								"    // Don't fail, just warn",
+								"});",
+								"",
+								"// Store performance metrics",
+								"pm.globals.set('checkout_perf_time', pm.response.responseTime);"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [],
+					"url": {
+						"raw": "{{base_url}}/checkout?user_id={{perf_test_user}}&item_id={{test_item_id_1}}",
+						"host": ["{{base_url}}"],
+						"path": ["checkout"],
+						"query": [
+							{
+								"key": "user_id",
+								"value": "{{perf_test_user}}"
+							},
+							{
+								"key": "item_id",
+								"value": "{{test_item_id_1}}"
+							}
+						]
+					}
+				}
+			},
+			{
+				"name": "Purchase Performance Test",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test('Purchase performance - under 2 seconds', function () {",
+								"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+								"});",
+								"",
+								"pm.test('Purchase performance - under 1 second preferred', function () {",
+								"    if (pm.response.responseTime > 1000) {",
+								"        console.warn(`Purchase took ${pm.response.responseTime}ms - consider optimization`);",
+								"    }",
+								"});",
+								"",
+								"// Store performance metrics",
+								"pm.globals.set('purchase_perf_time', pm.response.responseTime);"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [],
+					"url": {
+						"raw": "{{base_url}}/purchase?code={{checkout_code}}",
+						"host": ["{{base_url}}"],
+						"path": ["purchase"],
+						"query": [
+							{
+								"key": "code",
+								"value": "{{checkout_code}}"
+							}
+						]
+					}
+				}
+			}
+		]
+	},
+	{
+		"name": "🧪 Comprehensive Test Suite",
+		"item": [
+			{
+				"name": "End-to-End User Journey",
+				"event": [
+					{
+						"listen": "prerequest",
+						"script": {
+							"exec": [
+								"// Reset test environment",
+								"const e2eUser = 'e2e_user_' + Math.random().toString(36).substr(2, 9);",
+								"pm.environment.set('e2e_test_user', e2eUser);",
+								"",
+								"// Initialize test counters",
+								"pm.globals.set('e2e_step', '1');",
+								"pm.globals.set('e2e_checkout_code', '');"
+							],
+							"type": "text/javascript"
+						}
+					},
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"const step = pm.globals.get('e2e_step');",
+								"",
+								"switch(step) {",
+								"    case '1': // Health check",
+								"        pm.test('E2E Step 1: Service is healthy', function () {",
+								"            pm.response.to.have.status(200);",
+								"        });",
+								"        pm.globals.set('e2e_step', '2');",
+								"        break;",
+								"        ",
+								"    case '2': // Get active sale",
+								"        pm.test('E2E Step 2: Active sale available', function () {",
+								"            pm.response.to.have.status(200);",
+								"            const response = pm.response.json();",
+								"            pm.expect(response.active).to.be.true;",
+								"        });",
+								"        pm.globals.set('e2e_step', '3');",
+								"        break;",
+								"        ",
+								"    case '3': // Checkout item",
+								"        pm.test('E2E Step 3: Checkout successful', function () {",
+								"            pm.response.to.have.status(200);",
+								"            const response = pm.response.json();",
+								"            pm.globals.set('e2e_checkout_code', response.code);",
+								"        });",
+								"        pm.globals.set('e2e_step', '4');",
+								"        break;",
+								"        ",
+								"    case '4': // Purchase",
+								"        pm.test('E2E Step 4: Purchase successful', function () {",
+								"            pm.response.to.have.status(200);",
+								"            const response = pm.response.json();",
+								"            pm.expect(response.success).to.be.true;",
+								"        });",
+								"        pm.globals.set('e2e_step', 'complete');",
+								"        break;",
+								"}",
+								"",
+								"console.log(`E2E Test - Completed step ${step}`);"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "GET",
+					"header": [],
+					"url": {
+						"raw": "{{base_url}}/health",
+						"host": ["{{base_url}}"],
+						"path": ["health"]
+					}
+				}
+			},
+			{
+				"name": "Stress Test Summary",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"// Collect all performance metrics",
+								"const healthTime = pm.globals.get('baseline_health_time') || 'N/A';",
+								"const checkoutTime = pm.globals.get('checkout_perf_time') || 'N/A';",
+								"const purchaseTime = pm.globals.get('purchase_perf_time') || 'N/A';",
+								"",
+								"console.log('=== PERFORMANCE SUMMARY ===');",
+								"console.log(`Health Check: ${healthTime}ms`);",
+								"console.log(`Checkout: ${checkoutTime}ms`);",
+								"console.log(`Purchase: ${purchaseTime}ms`);",
+								"console.log('========================');",
+								"",
+								"pm.test('Service is still healthy after stress testing', function () {",
+								"    pm.response.to.have.status(200);",
+								"});",
+								"",
+								"pm.test('Performance metrics collected', function () {",
+								"    pm.expect(healthTime).to.not.eql('N/A');",
+								"    pm.expect(checkoutTime).to.not.eql('N/A');",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "GET",
+					"header": [],
+					"url": {
+						"raw": "{{base_url}}/health",
+						"host": ["{{base_url}}"],
+						"path": ["health"]
+					}
+				}
+			}
+		]
+	}
+],
+"event": [
+	{
+		"listen": "prerequest",
+		"script": {
+			"id": "global-prerequest",
+			"exec": [
+				"// Global pre-request script",
+				"",
+				"// Set default timeout",
+				"pm.request.timeout = 30000;",
+				"",
+				"// Log request details in verbose mode",
+				"if (pm.environment.get('verbose_logging') === 'true') {",
+				"    console.log(`Making ${pm.request.method} request to: ${pm.request.url}`);",
+				"}",
+				"",
+				"// Ensure service is healthy before running tests",
+				"if (pm.globals.get('service_healthy') !== 'true') {",
+				"    console.warn('Service health not verified - some tests may fail');",
+				"}"
+			],
+			"type": "text/javascript"
+		}
+	},
+	{
+		"listen": "test",
+		"script": {
+			"id": "global-test",
+			"exec": [
+				"// Global test script",
+				"",
+				"// Track request in global stats",
+				"let totalRequests = parseInt(pm.globals.get('total_requests') || '0');",
+				"let successfulRequests = parseInt(pm.globals.get('successful_requests') || '0');",
+				"",
+				"totalRequests++;",
+				"if (pm.response.code < 400) {",
+				"    successfulRequests++;",
+				"}",
+				"",
+				"pm.globals.set('total_requests', totalRequests.toString());",
+				"pm.globals.set('successful_requests', successfulRequests.toString());",
+				"",
+				"// Calculate success rate",
+				"const successRate = ((successfulRequests / totalRequests) * 100).toFixed(2);",
+				"pm.globals.set('success_rate', successRate);",
+				"",
+				"// Log stats every 10 requests",
+				"if (totalRequests % 10 === 0) {",
+				"    console.log(`Stats: ${successfulRequests}/${totalRequests} requests successful (${successRate}%)`);",
+				"}",
+				"",
+				"// Global assertion: No server errors",
+				"pm.test('No server errors (5xx)', function () {",
+				"    pm.expect(pm.response.code).to.be.below(500);",
+				"});",
+				"",
+				"// Global assertion: Response has valid JSON (when applicable)",
+				"if (pm.response.headers.get('Content-Type') && pm.response.headers.get('Content-Type').includes('application/json')) {",
+				"    pm.test('Valid JSON response', function () {",
+				"        pm.response.to.be.json;",
+				"    });",
+				"}"
+			],
+			"type": "text/javascript"
+		}
+	}
+],
+"variable": [
+	{
+		"key": "base_url",
+		"value": "http://localhost:8080",
+		"type": "string"
+	},
+	{
+		"key": "verbose_logging",
+		"value": "false",
+		"type": "string"
+	}
+]
+}
